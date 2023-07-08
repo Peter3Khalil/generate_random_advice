@@ -1,5 +1,5 @@
 import axios from 'axios'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FaDiceFive } from "react-icons/fa"
 import { useQuery } from 'react-query'
 import ClipLoader from "react-spinners/ClipLoader";
@@ -12,19 +12,19 @@ const Line = () => {
   </div>
 }
 const fetchAdvice = async () => {
-  const { data } = await axios.get("https://api.adviceslip.com/advice");
-  return data;
+  const res = await axios.get("https://api.adviceslip.com/advice");
+  return res.data;
 }
 const Home = () => {
-  const { data, isLoading, isError, isFetching,refetch } = useQuery("advice", fetchAdvice, {
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery("advice", fetchAdvice, {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    select:data=>data?.slip.advice
+    select: data => data?.slip.advice
   })
   const [adviceNumber, setAdviceNumber] = useState(1)
   const handleOnClick = () => {
     refetch()
-    .then(() => setAdviceNumber(adviceNumber + 1))
+      .then(() => setAdviceNumber(adviceNumber + 1))
   }
   return (
     <div className={`
@@ -38,7 +38,7 @@ const Home = () => {
     px-6
     bg-dark-blue
     `}>
-     
+
       <div className={`
       flex
       flex-col
@@ -68,14 +68,7 @@ const Home = () => {
         text-center
         `}
         >
-          <ClipLoader 
-          loading={isLoading||isFetching}
-          color={"#fff"}
-          size={50}
-          aria-label="Loading Spinner"
-          data-testid="loader"
-          />
-          {(!isFetching &&!isLoading) && data}
+          {data}
         </q>
         <div className={`
         flex
@@ -106,7 +99,16 @@ const Home = () => {
         '
           onClick={handleOnClick}
         >
-          <FaDiceFive className='w-8 h-8 md:h-6 md:w-6' />
+          <ClipLoader
+            loading={isLoading || isFetching}
+            color={"#000"}
+            size={30}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+          />
+          { (!isLoading&&!isFetching)&&
+            <FaDiceFive className={`w-8 h-8 md:h-6 md:w-6`} />
+          }
         </div>
       </div>
     </div>
