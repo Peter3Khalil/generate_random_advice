@@ -3,6 +3,11 @@ import React, { useEffect, useState } from 'react'
 import { FaDiceFive } from "react-icons/fa"
 import { useQuery } from 'react-query'
 import ClipLoader from "react-spinners/ClipLoader";
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton'
+import 'react-toastify/dist/ReactToastify.css';
+import 'react-loading-skeleton/dist/skeleton.css'
+import { toast, ToastContainer } from 'react-toastify';
+import { BiSolidErrorCircle } from "react-icons/bi"
 const Column = () => {
   return <div className='h-4 w-2 bg-light-cyan rounded-full'>
   </div>
@@ -19,13 +24,48 @@ const Home = () => {
   const { data, isLoading, isError, error, isFetching, refetch } = useQuery("advice", fetchAdvice, {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     select: data => data?.slip.advice
   })
   const [adviceNumber, setAdviceNumber] = useState(1)
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(()=>{
+    setIsOnline(navigator.onLine)
+  },[])
+  useEffect(() => {
+    const handleIsOnline = () => {
+      setIsOnline(true)
+      toast.success("Connected")
+    }
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.error("Disconnected")
+    }
+    window.addEventListener("online", handleIsOnline)
+    window.addEventListener("offline", handleOffline)
+    return () => {
+      window.removeEventListener("online", handleIsOnline)
+      window.removeEventListener("offline", handleOffline)
+    }
+  }, [isOnline])
   const handleOnClick = () => {
-    refetch()
-      .then(() => setAdviceNumber(adviceNumber + 1))
+    if (isOnline) {
+      refetch()
+        .then(() => setAdviceNumber(adviceNumber + 1))
+    }
   }
+  const buttonStyle = `h-16
+  w-16
+  md:w-12
+  md:h-12
+  rounded-full
+  absolute 
+  bottom-[-1.5rem]
+  flex
+  justify-center
+  items-center
+  cursor-pointer
+  custom-shadow`
   return (
     <div className={`
     flex
@@ -38,7 +78,18 @@ const Home = () => {
     px-6
     bg-dark-blue
     `}>
-
+      <ToastContainer
+        position="top-center"
+        autoClose={1000}
+        hideProgressBar
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <div className={`
       flex
       flex-col
@@ -68,7 +119,9 @@ const Home = () => {
         text-center
         `}
         >
-          {data}
+          <SkeletonTheme baseColor="gray" highlightColor="#fff">
+            {isFetching && isOnline ? <Skeleton width={200} height={10} enableAnimation={true} duration={1} /> : data}
+          </SkeletonTheme>
         </q>
         <div className={`
         flex
@@ -82,34 +135,22 @@ const Home = () => {
           <Column />
           <Line />
         </div>
-        <div className='
-        h-16
-        w-16
-        md:w-12
-        md:h-12
-        rounded-full
-      bg-neon-green 
-        absolute 
-        bottom-[-1.5rem]
-        flex
-        justify-center
-        items-center
-        cursor-pointer
-        custom-shadow
-        '
+        <button className={isOnline?buttonStyle+" bg-neon-green":buttonStyle+" bg-red-500"}
           onClick={handleOnClick}
+          disabled={!isOnline}
         >
           <ClipLoader
-            loading={isLoading || isFetching}
+            loading={(isLoading || isFetching) && isOnline}
             color={"#000"}
             size={30}
             aria-label="Loading Spinner"
             data-testid="loader"
           />
-          { (!isLoading&&!isFetching)&&
+          {(!isLoading && !isFetching) && isOnline &&
             <FaDiceFive className={`w-8 h-8 md:h-6 md:w-6`} />
           }
-        </div>
+          {!isOnline && <BiSolidErrorCircle className={`w-8 h-8 md:h-6 md:w-6`} />}
+        </button>
       </div>
     </div>
   )
